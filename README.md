@@ -51,6 +51,8 @@ So the resources can be loaded correctly.
 
 Also, check that the background jobs, in nextcloud configuration (webpage, not files) is checked to cron
 
+The files acme.json and access.log that are created on the folder are the LetsEncrypt cert, and the Traefik access logs.
+
 ### 5. What is installed
 
 * Nextcloud with cron inside (Thats because is doing a custom build of the nextcloud image)
