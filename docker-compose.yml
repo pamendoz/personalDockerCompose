@@ -1,0 +1,130 @@
+version: "3.7"
+
+services:
+  traefik:
+    image: traefik:v2.0.4
+    restart: unless-stopped
+    container_name: traefik
+    hostname: traefik
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./:/etc/traefik/
+    environment:
+      OVH_ENDPOINT:
+      OVH_APPLICATION_KEY:
+      OVH_APPLICATION_SECRET:
+      OVH_CONSUMER_KEY:
+
+  nextcloud:
+    build: .
+    restart: unless-stopped
+    container_name: nextcloud
+    hostname: nextcloud
+    networks:
+      - proxy
+    depends_on:
+      - db
+      - redis
+      - documentserver
+    volumes:
+      - nextcloud-main:/var/www/html
+      - nextcloud-apps:/var/www/html/custom_apps
+      - nextcloud-config:/var/www/html/config
+      - nextcloud-data:/var/www/html/data
+    environment:
+      NEXTCLOUD_TRUSTED_DOMAINS: "cloud-subdomain.domain.tld"
+      REDIS_HOST: redis
+      REDIS_HOST_PASSWORD: password
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: superUser
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: "db:5432"
+
+  documentserver:
+    image: onlyoffice/documentserver
+    restart: unless-stopped
+    container_name: documentserver
+    hostname: documentserver
+    networks:
+      - proxy
+    depends_on:
+      - db
+    volumes:
+      - ds-logs:/var/log/onlyoffice
+      - ds-cache:/var/lib/onlyoffice
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: password
+
+  db:
+    image: postgres:12.1
+    restart: unless-stopped
+    container_name: db
+    hostname: db
+    networks:
+      - proxy
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: superUser
+      POSTGRES_PASSWORD: password
+  
+  redis:
+    image: redis:5.0
+    restart: unless-stopped
+    container_name: redis
+    hostname: redis
+    environment:
+      REDIS_PASSWORD: password
+    volumes:
+      - redis-db:/bitnami/redis/data
+      - redis-config:/opt/bitnami/redis/etc/redis.conf
+    networks:
+      - proxy
+      
+  jellyfin:  
+    image: jellyfin/jellyfin:10.4.1
+    restart: unless-stopped
+    container_name: jellyfin
+    hostname: jellyfin
+    volumes:
+      - jellyfin-config:/config  
+      - jellyfin-cache:/cache  
+      - nextcloud-data:/media:ro
+    networks:
+      - proxy
+
+  bitwarden:
+    image: bitwardenrs/server:1.12.0
+    restart: unless-stopped
+    container_name: bitwarden
+    hostname: bitwarden
+    networks:
+      - proxy
+    volumes:
+      - bw-data:/data
+    environment:
+      WEBSOCKET_ENABLED: "true"
+      SIGNUPS_ALLOWED: "true"
+
+volumes:
+  nextcloud-main:
+  nextcloud-apps:
+  nextcloud-config:
+  nextcloud-data:
+  ds-logs:
+  ds-cache:
+  db-data:
+  redis-db:
+  redis-config:
+  jellyfin-config:
+  jellyfin-cache:
+  bw-data:
+
+networks:
+    proxy:
+      name: proxy

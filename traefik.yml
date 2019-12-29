@@ -1,0 +1,230 @@
+## Static configuration
+log:
+  level: INFO
+  
+accessLog:
+  filePath: /etc/traefik/access.log
+  bufferingSize: 1000
+  
+api:
+  dashboard: true
+
+providers: 
+  file:
+    filename: /etc/traefik/traefik.yml
+    watch: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+  web-secure:
+    address: ":443"
+    
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      caServer: https://acme-v02.api.letsencrypt.org/directory
+      email: YOUR EMAIL
+      storage: /etc/traefik/acme.json
+      dnsChallenge:
+        provider: your-domain-provider
+        delayBeforeCheck: 0
+        
+tls:
+  options:
+    default:
+      sniStrict: true
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
+## Dynamic configuration
+http:
+  routers:
+    
+    #DASHBOARD
+    api-redirect:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: api@internal
+      
+    api-router:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web-secure
+      middlewares:
+        - security-headers
+        - api-auth
+      service: api@internal
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "*.doamin.tld"
+        options: default
+  
+    #NEXTCLOUD
+    nextcloud-redirect:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: nextcloud
+
+    nextcloud-router:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web-secure
+      middlewares:
+        - security-headers
+        - nextcloud-redirect
+      service: nextcloud
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "*.doamin.tld"
+        options: default
+    
+    #BITWARDEN UI
+    bitwarden-ui-redirect:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: bitwarden-ui
+    
+    bitwarden-ui-router:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web-secure
+      middlewares:
+        - security-headers
+      service: bitwarden-ui
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "*.doamin.tld"
+        options: default
+        
+    #BITWARDEN WEBSOCKET
+    bitwarden-websocket-router:
+      rule: Host(`subdomain.doamin.tld`) && Path(`/notifications/hub`)
+      entryPoints:
+        - web-secure
+      middlewares:
+        - security-headers
+      service: bitwarden-websocket
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "*.doamin.tld"
+        options: default
+    
+    #JELLYFIN
+    jellyfin-redirect:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: jellyfin
+
+    jellyfin-router:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web-secure
+      middlewares:
+        - security-headers
+      service: jellyfin
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "*.doamin.tld"
+        options: default
+        
+    #DOCUMENTSERVER
+    documentserver-redirect:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web
+      middlewares:
+        - https-redirect
+      service: documentserver
+
+    documentserver-router:
+      rule: Host(`subdomain.doamin.tld`)
+      entryPoints:
+        - web-secure
+      middlewares:
+        - security-headers
+      service: documentserver
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - main: "*.doamin.tld"
+        options: default
+        
+  middlewares:
+    https-redirect:
+      redirectScheme:
+        scheme: https
+      
+    api-auth:
+      basicAuth:
+        users:
+          - dashbOardUser:password-hash
+    
+    security-headers:
+      headers:
+        referrerPolicy: no-referrer
+        forceSTSHeader: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Powered-By: "Redstone"
+          Server: "Server"
+        
+    nextcloud-redirect:
+      redirectRegex:
+        permanent: true
+        regex: http://(.*)/.well-known/(card|cal)dav
+        replacement: http://$$1/remote.php/dav/
+        
+  services:
+    nextcloud:
+      loadBalancer:
+        servers:
+        - url: http://nextcloud:80
+        
+    jellyfin:
+      loadBalancer:
+        servers:
+        - url: http://jellyfin:8096
+        
+    bitwarden-ui:
+      loadBalancer:
+        servers:
+        - url: http://bitwarden:80
+        
+    bitwarden-websocket:
+      loadBalancer:
+        servers:
+        - url: ws://bitwarden:3012
+        
+    documentserver:
+      loadBalancer:
+        servers:
+        - url: http://documentserver:80
