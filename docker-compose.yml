@@ -36,7 +36,7 @@ services:
       - nextcloud-config:/var/www/html/config
       - nextcloud-data:/var/www/html/data
     environment:
-      NEXTCLOUD_TRUSTED_DOMAINS: "cloud-subdomain.domain.tld"
+      NEXTCLOUD_TRUSTED_DOMAINS: "cloud.domain.tld"
       REDIS_HOST: redis
       REDIS_HOST_PASSWORD: password
       POSTGRES_DB: nextcloud
