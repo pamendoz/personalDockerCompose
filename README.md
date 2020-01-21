@@ -18,7 +18,15 @@ My provider is OVH, but any provider that is supported by ACME can be used:
 
 This setup also uses wildcard certificate, so only one certificate is used for all your domain. Your provider must support DNS-01 challenge to use wildcard certificates.
 
-You will need to get the API access keys before the install, and set the environment variables accordingly.
+You will need to get the API access keys before the install and add them to environment variables in docker-compose.yml, example for OVH provider:
+
+```
+environment:
+    OVH_ENDPOINT: <ovh-eu or ovh-ca>
+    OVH_APPLICATION_KEY: <your_application_key>
+    OVH_APPLICATION_SECRET: <your_application_secret>
+    OVH_CONSUMER_KEY: <your_application_consumer_key>
+```
 
 ### 3. Setup
 
