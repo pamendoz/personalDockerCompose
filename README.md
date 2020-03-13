@@ -37,7 +37,7 @@ And give it some time until everything starts, and the certificate is requested
 Go to Nextcloud, create your user, enter to the main files pages, and then go to the server shell and get inside the container using:
 
 ```
-sudo docker exec -it nextcloud bash
+sudo docker exec -it -u www-data nextcloud bash
 nano config/config.php
 ```
 
