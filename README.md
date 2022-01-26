@@ -6,13 +6,11 @@ READ EVERYTHING BEFORE INSTALL
 
 This setup requires the latest Docker and Docker-compose versions (I am running on 19.03.5)
 
-It is also recommended to run it on CentOS 7 with the latest kernel. More info on how to update the kernel here: 
-
 <https://www.howtoforge.com/tutorial/how-to-upgrade-kernel-in-centos-7-server/>
 
 ### 2. Domain provider requirements
 
-My provider is OVH, but any provider that is supported by ACME can be used:
+Any provider that is supported by ACME can be used:
 
 <https://docs.traefik.io/v2.0/https/acme/#providers>
 
